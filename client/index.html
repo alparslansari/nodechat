@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en" ng-app>
+  <head>
+    <title>Chat Example</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-responsive.min.css">
+    <style>
+      body {
+        padding-top: 60px;
+      }
+    </style>
+    <script>
+  
+    var test;
+      function ChatController($scope) {
+        var socket = io.connect();
+
+        $scope.messages = [];
+        $scope.roster = [];
+        $scope.name = '';
+        $scope.text = '';
+
+        socket.on('connect', function () {
+          $scope.setName();
+        });
+
+        socket.on('message', function (msg) {
+          test = msg;
+          //console.log("in message:");
+          //showChat(msg.text);
+          /*
+          rsaWrapper.publicDecrypt(document.getElementById('server_public').value, msg.text).then(function (decrypted) {
+            console.log(">>>"+decrypted);
+          });
+          */
+          //console.log("***end***");
+          $scope.messages.push(msg);
+          $scope.$apply();
+        });
+
+        socket.on('roster', function (names) {
+          $scope.roster = names;
+          $scope.$apply();
+        });
+
+        $scope.send = function send() {
+          console.log('Sending message:', $scope.text);
+          rsaWrapper.publicEncrypt(document.getElementById('server_public').value, $scope.text).then(function (encrypted) {
+          console.log('RSA encrypted base64 message from client', encrypted);
+            // emit encryption client message to server
+            socket.emit('message', encrypted);
+            //socket.emit('message', $scope.text);
+          });
+        
+          $scope.text = '';
+        };
+
+        $scope.setName = function setName() {
+          socket.emit('identify', $scope.name);
+        };
+      }
+    </script>
+  </head>
+  <body>
+    <div class="container" ng-controller="ChatController">
+      <div class="navbar navbar-fixed-top navbar-inverse">
+        <div class="navbar-inner">
+          <div class="pull-right">
+            <a href="https://c9.io" class="brand">Cloud9 IDE</a>
+          </div>
+        </div>
+      </div>
+      <div class="page-header">
+        <h1>Chat Example</h1>
+      </div>
+      <div class="row">
+        <div class="span3">
+          <ul class="nav nav-list well">
+            <li class="nav-header">Local Users</li>
+            <li ng-repeat="user in roster" ng-bind="user">
+            </li>
+          </ul>
+        </div>
+        <div class="span9">
+          <table class="table table-striped table-bordered">
+            <thead>
+              <tr>
+                <th class="span2">Name</th>
+                <th class="span7">Text</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="msg in messages">
+                <td class="span2" ng-bind="msg.name" ></td>
+                <td class="span7" ng-bind="msg.text" ></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="row controls">
+            <form ng-submit="send()">
+              <div class="span2"><input type="text" class="input-block-level" ng-model="name" ng-change="setName()" placeholder="Your Name"></div>
+              <div class="input-append span7">
+                <input type="text" class="span6" ng-model="text" placeholder="Message">
+                <input type="submit" class="span1 btn btn-primary" value="Send" ng-disabled="!text">
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+<textarea id="server_public">
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnPQ6+vqnIwpYLNmM0DvP
+jWYoaZHV6rW4HcofqyjUO8rzQSEmfgT+quTzPsNcnAqHVC7IGafomu8Y82wX6JPK
+YZHn+st8ZoehILgZSBM6y1QIVXdBnQct+R3/o1Gc7TMMYVjk+UrFT7PHou7AwmTM
+TRiS/ZvSRVoSXs3AxMCUn1V83FP68yKMDq2I82WOESoAWqGuYmsIxk2EXVaGBtjM
+wRIs2EzWz8ITfmOczl+QAH31SDCSIJxWbkEHopzHJnEW99p7I3P1cr17JEKGhWO1
+nx2Wq6X4OC6Y5MaB64MzspDTND5gzwPNTibcw3s/59o+FV22drhCwylUxuWUhakP
+LQIDAQAB
+-----END PUBLIC KEY-----
+</textarea>
+
+<textarea id="client_public">
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAj3esh+8vIdSIb44d0yGB
+WDwOgQDAUqbZbSUkS7ho9OP3ptopmqw20Bc37RfKAqEjqY88kzl011BWw/MB/u0w
+5f5ps8VH/lqFE/WeUWbuYZGi7w5dcGrUmiDYOPyz4B7GlYFUwkkiaduIFIRwO36/
++Vw9oC4cXpyxjJfFgVWLyhvCwuTOSy8E+LgZVNreIGeK0x1Cg3H3n2tR9I/ZmdWp
+oVqQS3w7AxcSwz8g+KekLEVwFjuoWEu2z0KHrgLoyI4ksDJI6pCI+PjhQydcLhST
+vSJCSBe+qleaecxrLR3P8Xs5HLYu3Mc4Sssdu+/3bBbUKufnxaTX6Rkp+SfxwGyK
+rwIDAQAB
+-----END PUBLIC KEY-----
+</textarea>
+
+<textarea id="client_private">
+-----BEGIN PRIVATE KEY-----
+MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCPd6yH7y8h1Ihv
+jh3TIYFYPA6BAMBSptltJSRLuGj04/em2imarDbQFzftF8oCoSOpjzyTOXTXUFbD
+8wH+7TDl/mmzxUf+WoUT9Z5RZu5hkaLvDl1watSaINg4/LPgHsaVgVTCSSJp24gU
+hHA7fr/5XD2gLhxenLGMl8WBVYvKG8LC5M5LLwT4uBlU2t4gZ4rTHUKDcfefa1H0
+j9mZ1amhWpBLfDsDFxLDPyD4p6QsRXAWO6hYS7bPQoeuAujIjiSwMkjqkIj4+OFD
+J1wuFJO9IkJIF76qV5p5zGstHc/xezkcti7cxzhKyx277/dsFtQq5+fFpNfpGSn5
+J/HAbIqvAgMBAAECggEASEcZY65rh1akmdb2TZzOph4zjGhNfBZU6bjRjVhNgDqt
+VKEKXsMuJi3cXhUjD6oQ5makNOO4apUt8TAnLEBg5y4CILBeMdV2v/R5GzeJFxyh
+AmCxUGZxz2iGpkchc+LtVvq+MddYgA46g2Opiz+zBbSj02QHpN66UENSHHN1po8K
+y9yNcXBxta3fwRS0g/ARLxbGnkKBhOxraV6UwOcjRFDAO6aC25KyP59JAM0SxmnO
+G1sIDwiYz8lfM1D5ydffWAKGCU7ZBkrVDM4yumSpqEwCMTTcnEjTbQ8ZDYSz1vZZ
+haVGzcgUrPtB9SGOgt9GbVrr0CMrSkEH9QVoPuVlGQKBgQDqYk+N92CZZ22pQ8te
+kz1wyyqcJWrltMHKMLxzbDFzcJoL219XmGAcPG7fk4Qc6zq8E0f/+dfrbNyCUBEf
+Zxal0t70QJWhCTxdQnLCTqLn1sdMr5POkVjEnF04kwacqolmNVC50H6sW2ilzzQn
+CzjwoTzfGWoyLWU5YZXCfXXEXQKBgQCcst57Qyz/Sa6SaFjHzVQeDc9TqtVo9niu
+H6DUTnCgM57mvBeYsedet359NJ3ET0vQT5RRAkPRBqgezxNb3OAa/dhV1glvArHr
+7UPsAH6Yp98taYFHomqivR8CXq9AxV2EcAwIHBYJR21U6g/7XGUEExz2tQ+AzrBd
+IFVo9CDaewKBgAMLIcNTKgLz792ZzsM8oDidusDqT3gKH9YTSe8pwX6hQK7Uu2k0
+xlK3ii0HClkhyNJ2YaH2SZJ6CGb8ySwiN44Rrel4CTldGFaRrVHOmZjvFglt4jp1
+crSi3ycD6bsRD9Wu7YxsI6jzSumURjYXlDazsUmoV9Os+TqEhOBQpr3VAoGAHBRx
+ieUfyx+JCPNp9WP2DuyqmnOiioygU5OXXnQv+oVFlFNgZxx6OZ7oK8eh/eu3yjx4
+d4vQW0S2G88/yNZr0mpqufcA+cOh3oVGBqSQCwsKEzk00YFpWoBJbkNJZHH5sCHk
+BhACYudJ0E2hT4nfEDvclNkdThe7wvRoWcZlnMECgYBDSLnDeyduLhvctgcJUU9F
+QdqFYAWjzXFfJItUGWAGFC7Lpn8PVcc7u6hH1oFJlohi39T2gYrKB5PmYN9/52/r
+u8ThbAvTm+yqMmsDNkBkohfx25p3NLsV0r46mpRXuraQTFXcYrc1mW+BkoteY06S
+Oe6lSHTplzRc0QPTat5+mQ==
+-----END PRIVATE KEY-----
+</textarea>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/angular.min.js"></script>
+    <script src="/js/converter-wrapper.js"></script>
+    <script src="/js/rsa-wrapper.js"></script>
+    <script src="/js/aes-wrapper.js"></script>
+  </body>
+</html>
